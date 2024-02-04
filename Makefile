@@ -1,7 +1,7 @@
 build:
 	@go build -o bin/gobackend
 
-run: build
+up: build
 	@./bin/gobackend
 
 test:
