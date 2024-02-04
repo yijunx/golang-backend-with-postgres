@@ -1,2 +1,9 @@
 # golang-backend-with-postgres
-golang backend with postgres tong mai dockerfile
+golang backend with postgres with
+* jwt
+* tests
+* dockerfile
+
+# steps
+
+* 
