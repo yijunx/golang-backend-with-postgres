@@ -56,12 +56,12 @@ func (s *PostgresStore) CreateAccount(acc *Account) error {
 	(first_name, last_name, number, balance, created_at)
 	values
 	($1,$2,$3,$4,$5)
+	RETURNING id
 	`
-	resp, err := s.db.Query(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt)
+	err := s.db.QueryRow(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt).Scan(&acc.ID)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v", resp)
 	return nil
 }
 
