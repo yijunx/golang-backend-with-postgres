@@ -5,5 +5,5 @@ golang backend with postgres with
 * dockerfile
 
 # steps
-
+export JWT_SECRET=jwtsecret
 * 
