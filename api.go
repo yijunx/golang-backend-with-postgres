@@ -28,12 +28,36 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
+	router.HandleFunc("/login", makeHTTPHandleFunc(s.handleLogin))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleAccountByID), s.store))
 	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
 
 	log.Println("JSON API servier is running on port:", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
+}
+
+// new account number =>  4273357 password
+// new account number =>  9641 password2
+func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+
+	if r.Method != "POST" {
+		return fmt.Errorf("methods not allowed %s", r.Method)
+	}
+
+	loginReq := new(LoginRequest)
+	if err := json.NewDecoder(r.Body).Decode(&loginReq); err != nil {
+		return err
+	}
+
+	acc, err := s.store.GetAccountByNumber(int(loginReq.Number))
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%+v\n", acc)
+
+	return WriteJSON(w, http.StatusOK, loginReq)
 }
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
@@ -96,17 +120,20 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	account := NewAccount(createAccountReq.FirstName, createAccountReq.LastName)
+	account, err := NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Password)
+	if err != nil {
+		return err
+	}
 	if err := s.store.CreateAccount(account); err != nil {
 		return err
 	}
 
 	// generate a jwt token..
-	tokenString, err := createJWT(account)
-	if err != nil {
-		return err
-	}
-	fmt.Println("JWT token: ", tokenString)
+	// tokenString, err := createJWT(account)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println("JWT token: ", tokenString)
 	return WriteJSON(w, http.StatusOK, account)
 }
 
