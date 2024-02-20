@@ -37,8 +37,8 @@ func (s *APIServer) Run() {
 	http.ListenAndServe(s.listenAddr, router)
 }
 
-// new account number =>  4273357 password
-// new account number =>  9641 password2
+// new account number =>  8555516 password
+// new account number =>  9611282 password2
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 
 	if r.Method != "POST" {
@@ -52,12 +52,24 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 
 	acc, err := s.store.GetAccountByNumber(int(loginReq.Number))
 	if err != nil {
+		return err // handle this response as json
+	}
+
+	// now the account exsits
+	tokenString, err := createJWT(acc)
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%+v\n", acc)
+	if !acc.ValidatePassword(loginReq.Password) {
+		return fmt.Errorf("failed to login")
+	}
+	resp := LoginResponse{
+		Token:  tokenString,
+		Number: acc.Number,
+	}
 
-	return WriteJSON(w, http.StatusOK, loginReq)
+	return WriteJSON(w, http.StatusOK, resp)
 }
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {

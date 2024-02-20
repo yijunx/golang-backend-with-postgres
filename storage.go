@@ -42,6 +42,7 @@ func (s *PostgresStore) createAccountTable() error {
 		id serial primary key,
 		first_name varchar(50),
 		last_name varchar(50),
+		encrypted_password varchar(255),
 		number serial,
 		balance serial,
 		created_at timestamp
@@ -54,12 +55,12 @@ func (s *PostgresStore) createAccountTable() error {
 func (s *PostgresStore) CreateAccount(acc *Account) error {
 	query := `
 	insert into account 
-	(first_name, last_name, number, balance, created_at)
+	(first_name, last_name, number, encrypted_password, balance, created_at)
 	values
-	($1,$2,$3,$4,$5)
+	($1,$2,$3,$4,$5,$6)
 	RETURNING id
 	`
-	err := s.db.QueryRow(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt).Scan(&acc.ID)
+	err := s.db.QueryRow(query, acc.FirstName, acc.LastName, acc.Number, acc.EncryptedPassword, acc.Balance, acc.CreatedAt).Scan(&acc.ID)
 	if err != nil {
 		return err
 	}
@@ -118,11 +119,24 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 
 func scanIntoAccount(rows *sql.Rows) (*Account, error) {
 	account := new(Account)
+	// here we must follow the col sequence
+	// when we create the table
+	// or we specify what cols to take..
+	// query := `create table if not exists account (
+	// 	id serial primary key,
+	// 	first_name varchar(50),
+	// 	last_name varchar(50),
+	// 	encrypted_password varchar(255),
+	// 	number serial,
+	// 	balance serial,
+	// 	created_at timestamp
+	// )`
 	err := rows.Scan(
 		// needs to be in order
 		&account.ID,
 		&account.FirstName,
 		&account.LastName,
+		&account.EncryptedPassword,
 		&account.Number,
 		&account.Balance,
 		&account.CreatedAt,
